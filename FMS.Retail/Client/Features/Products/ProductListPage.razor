@@ -1,0 +1,109 @@
+﻿@page "/products"
+@inject HttpClient HttpClient
+@inject NavigationManager NavManager
+
+<MudTable Class="my-10" Items="_products" Loading="_isLoading" Hover="true">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Tooted</MudText>
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Filled.Add" OnClick="AddProduct" Title="Lisa uus" />
+    </ToolBarContent>
+    <LoadingContent>
+        <MudText Typo="Typo.body2">Oota, otsin tooteid...</MudText>
+    </LoadingContent>
+    <NoRecordsContent>
+        <MudText Typo="Typo.body2">Tooted puuduvad.</MudText>
+    </NoRecordsContent>
+    <ColGroup>
+        <col style="width: 25%" />
+        <col style="width: 40%" />
+        <col style="width: 20%" />
+        <col style="width: 15%" />
+    </ColGroup>
+    <HeaderContent>
+        <MudTh>Kood</MudTh>
+        <MudTh>Nimi</MudTh>
+        <MudTh>Hind</MudTh>
+        <MudTh></MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd>@context.Code</MudTd>
+        <MudTd>@context.Name</MudTd>
+        <MudTd>@context.Price</MudTd>
+        <MudTd Style="text-align:end">
+            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Delete" OnClick="() => DeleteProduct(context.Id)" Title="Kustuta" />
+            <MudIconButton Class="ml-2" Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="() => EditProduct(context.Id)" Title="Muuda" />
+        </MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <div class="d-flex justify-center">
+            <MudPagination Class="pa-4" Count="_pageCount" @bind-Selected="_pageNo" @bind-Selected:after="NavigateToPage" />
+        </div>
+    </PagerContent>
+</MudTable>
+
+@code {
+    private IEnumerable<ProductListItemModel> _products = Enumerable.Empty<ProductListItemModel>();
+    private int _pageNo;
+    private int _pageSize = 10;
+    private int _pageCount;
+    private bool _isLoading;
+
+    [Parameter, SupplyParameterFromQuery] public int? PageNo { get; set; }
+    [Parameter, SupplyParameterFromQuery] public int? PageSize { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _pageNo = PageNo ?? 1;
+        //_pageSize = PageSize ?? 10;
+
+        await LoadData();
+    }
+
+    #region event handlers
+    private void AddProduct()
+    {
+
+    }
+
+    private void EditProduct(int id)
+    {
+
+    }
+
+    private void DeleteProduct(int id)
+    {
+
+    }
+    #endregion
+
+    #region helpers
+    private async Task LoadData()
+    {
+        _isLoading = true;
+
+        var uriWithQueryString = NavManager.GetUriWithQueryParameters("/api/products", new Dictionary<string, object?>
+            {
+                [nameof(GetProductsRequest.PageNo)] = _pageNo,
+                [nameof(GetProductsRequest.PageSize)] = _pageSize
+            });
+        var response = await HttpClient.GetFromJsonAsync<GetProductsRequest.Response>(uriWithQueryString);
+
+        _products = response?.PagedList ?? Enumerable.Empty<ProductListItemModel>();
+        _pageCount = response?.PageCount ?? default;
+
+        _isLoading = false;
+    }
+
+    private void NavigateToPage()
+    {
+        var uriWithQueryString = NavManager.GetUriWithQueryParameters(new Dictionary<string, object?>
+            {
+                [nameof(GetProductsRequest.PageNo)] = _pageNo,
+                //[nameof(GetProductsRequest.PageSize)] = _pageSize
+            });
+
+        NavManager.NavigateTo(uriWithQueryString);
+    }
+    #endregion
+}
