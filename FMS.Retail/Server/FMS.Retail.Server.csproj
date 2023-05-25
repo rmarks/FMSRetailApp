@@ -7,10 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Ardalis.ApiEndpoints" Version="4.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="7.0.5" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\FMS.Retail.DAL\FMS.Retail.DAL.csproj" />
     <ProjectReference Include="..\Client\FMS.Retail.Client.csproj" />
     <ProjectReference Include="..\Shared\FMS.Retail.Shared.csproj" />
   </ItemGroup>

@@ -1,11 +1,12 @@
+using FMS.Retail.DAL;
 using Microsoft.AspNetCore.ResponseCompression;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+builder.Services.AddControllers();
 
-builder.Services.AddControllersWithViews();
-builder.Services.AddRazorPages();
+builder.Services.AddDALServices();
 
 var app = builder.Build();
 
@@ -28,9 +29,12 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-
-app.MapRazorPages();
 app.MapControllers();
 app.MapFallbackToFile("index.html");
+
+using (var scope = app.Services.CreateScope())
+{
+    SeedData.EnsurePopulated(scope.ServiceProvider);
+}
 
 app.Run();
