@@ -3,11 +3,19 @@
 @inject NavigationManager NavManager
 @inject IDialogService DialogService
 
-<MudTable Class="my-10" Items="_products" Loading="_isLoading" Hover="true">
+<MudText Class="my-5 ml-2" Typo="Typo.h5">Tooted</MudText>
+
+<MudTable Class="mb-5" Items="_products" Loading="_isLoading" Hover="true">
     <ToolBarContent>
-        <MudText Typo="Typo.h6">Tooted</MudText>
-        <MudSpacer />
-        <MudIconButton Icon="@Icons.Material.Filled.Add" OnClick="AddProduct" Title="Lisa uus" />
+        <MudGrid>
+            <MudItem xs="8">
+                <MudIconButton Icon="@Icons.Material.Filled.Add" OnClick="AddProduct" Title="Lisa uus" />
+            </MudItem>
+            <MudItem xs="4">
+                <MudTextField Class="mt-0" @bind-Value="_searchTerm" @bind-Value:after="LoadData" Placeholder="Otsi koodi järgi..."
+                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"></MudTextField>
+            </MudItem>
+        </MudGrid>
     </ToolBarContent>
     <LoadingContent>
         <MudText Typo="Typo.body2">Oota, otsin tooteid...</MudText>
@@ -45,16 +53,19 @@
 
 @code {
     private IEnumerable<ProductListItemModel> _products = Enumerable.Empty<ProductListItemModel>();
+    private string? _searchTerm;
     private int _pageNo;
     private int _pageSize = 10;
     private int _pageCount;
     private bool _isLoading;
 
+    [Parameter, SupplyParameterFromQuery] public string? SearchTerm { get; set; }
     [Parameter, SupplyParameterFromQuery] public int? PageNo { get; set; }
     [Parameter, SupplyParameterFromQuery] public int? PageSize { get; set; }
 
     protected override async Task OnParametersSetAsync()
     {
+        _searchTerm = SearchTerm;
         _pageNo = PageNo ?? 1;
         //_pageSize = PageSize ?? 10;
 
@@ -120,6 +131,7 @@
 
         var uriWithQueryString = NavManager.GetUriWithQueryParameters("/api/products", new Dictionary<string, object?>
             {
+                [nameof(GetProductsRequest.SearchTerm)] = string.IsNullOrWhiteSpace(_searchTerm) ? null : _searchTerm,
                 [nameof(GetProductsRequest.PageNo)] = _pageNo,
                 [nameof(GetProductsRequest.PageSize)] = _pageSize
             });
@@ -135,6 +147,7 @@
     {
         var uriWithQueryString = NavManager.GetUriWithQueryParameters(new Dictionary<string, object?>
             {
+                [nameof(GetProductsRequest.SearchTerm)] = string.IsNullOrWhiteSpace(_searchTerm) ? null : _searchTerm,
                 [nameof(GetProductsRequest.PageNo)] = _pageNo,
                 //[nameof(GetProductsRequest.PageSize)] = _pageSize
             });
