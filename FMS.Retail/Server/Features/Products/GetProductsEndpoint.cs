@@ -21,6 +21,11 @@ public class GetProductsEndpoint : EndpointBaseAsync.WithRequest<GetProductsRequ
         var query = _context.Products
             .AsNoTracking();
 
+        if (request.SearchTerm is not null)
+        {
+            query = query.Where(p => p.Code.StartsWith(request.SearchTerm, StringComparison.OrdinalIgnoreCase));
+        }
+
         int pageCount = (int)Math.Ceiling((decimal)query.Count() / request.PageSize);
 
         var products = await query
