@@ -1,0 +1,46 @@
+﻿<EditForm Model="_product" OnValidSubmit="Submit">
+    <FluentValidationValidator />
+
+    <MudDialog DefaultFocus="DefaultFocus.FirstChild">
+        <DialogContent>
+            <MudGrid>
+                <MudItem xs="6">
+                    <MudTextField @bind-Value="_product.Code" Label="Kood" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                  For="@(() => _product.Code)" />
+                </MudItem>
+                <MudItem xs="6"></MudItem>
+
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="_product.Name" Label="Nimi" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                  For="@(() => _product.Name)" />
+                </MudItem>
+
+                <MudItem xs="4">
+                    <MudNumericField @bind-Value="_product.Price" Label="Hind" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                     For="@(() => _product.Price)" />
+                </MudItem>
+                <MudItem xs="8"></MudItem>
+            </MudGrid>
+        </DialogContent>
+        <DialogActions>
+            <MudButton ButtonType="ButtonType.Button" Variant="Variant.Filled" @onclick="Cancel">Katkesta (Esc)</MudButton>
+            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">Salvesta</MudButton>
+        </DialogActions>
+    </MudDialog>
+</EditForm>
+
+@code {
+    private ProductModel _product = default!;
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter, EditorRequired] public ProductModel Product { get; set; } = default!;
+
+    protected override void OnInitialized()
+    {
+        _product = Product;
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Submit() => MudDialog.Close(DialogResult.Ok(_product));
+}

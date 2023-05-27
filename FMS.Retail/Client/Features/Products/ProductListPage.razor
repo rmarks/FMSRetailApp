@@ -1,6 +1,7 @@
 ﻿@page "/products"
 @inject HttpClient HttpClient
 @inject NavigationManager NavManager
+@inject IDialogService DialogService
 
 <MudTable Class="my-10" Items="_products" Loading="_isLoading" Hover="true">
     <ToolBarContent>
@@ -61,19 +62,54 @@
     }
 
     #region event handlers
-    private void AddProduct()
+    private async Task AddProduct()
     {
+        var parameters = new DialogParameters();
+        parameters.Add("Product", new ProductModel());
 
+        var result = await DialogService.Show<ProductFormDialog>("Uus toode", parameters).Result;
+
+        if (result.Canceled) return;
+
+        ProductModel product = (ProductModel)result.Data;
+
+        var httpResponse = await HttpClient.PostAsJsonAsync<ProductModel>("/product", product);
+        if (!httpResponse.IsSuccessStatusCode) throw new Exception("Failed to add product.");
+
+        await LoadData();
     }
 
-    private void EditProduct(int id)
+    private async Task EditProduct(int id)
     {
+        ProductModel? product = await HttpClient.GetFromJsonAsync<ProductModel>($"/product/{id}");
+        if (product is null) throw new Exception("Product not found.");
 
+        var parameters = new DialogParameters();
+        parameters.Add("Product", product);
+
+        var result = await DialogService.Show<ProductFormDialog>("Muuda toodet", parameters).Result;
+
+        if (result.Canceled) return;
+
+        product = (ProductModel)result.Data;
+
+        var httpResponse = await HttpClient.PutAsJsonAsync<ProductModel>("/product", product);
+        if (!httpResponse.IsSuccessStatusCode) throw new Exception("Failed to edit product.");
+
+        await LoadData();
     }
 
-    private void DeleteProduct(int id)
+    private async Task DeleteProduct(int id)
     {
+        bool? result = await DialogService.ShowMessageBox("Kustutamine", "Kas kustutame toote?", yesText: "Kustuta", cancelText: "Katkesta");
 
+        if (result is not null)
+        {
+            var httpResponse = await HttpClient.DeleteAsync($"product/{id}");
+            if (!httpResponse.IsSuccessStatusCode) throw new Exception("Failed to delete product.");
+
+            await LoadData();
+        }
     }
     #endregion
 

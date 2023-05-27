@@ -9,9 +9,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FMS.Retail.Client", "FMS.Re
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FMS.Retail.Shared", "FMS.Retail\Shared\FMS.Retail.Shared.csproj", "{93FB4B78-7801-4586-9DA3-09C3BB42A564}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FMS.Retail.Domain", "FMS.Retail.Domain\FMS.Retail.Domain.csproj", "{A3095716-0DBA-464A-84F9-44B592BD8B52}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FMS.Retail.Domain", "FMS.Retail.Domain\FMS.Retail.Domain.csproj", "{A3095716-0DBA-464A-84F9-44B592BD8B52}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FMS.Retail.DAL", "FMS.Retail.DAL\FMS.Retail.DAL.csproj", "{1175FDF6-045C-4EAF-ADEA-87B407015C70}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FMS.Retail.DAL", "FMS.Retail.DAL\FMS.Retail.DAL.csproj", "{1175FDF6-045C-4EAF-ADEA-87B407015C70}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
