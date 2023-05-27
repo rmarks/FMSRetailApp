@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\FMS.Retail.DAL\FMS.Retail.DAL.csproj" />
+    <ProjectReference Include="..\..\FMS.Retail.Domain\FMS.Retail.Domain.csproj" />
     <ProjectReference Include="..\Client\FMS.Retail.Client.csproj" />
     <ProjectReference Include="..\Shared\FMS.Retail.Shared.csproj" />
   </ItemGroup>
