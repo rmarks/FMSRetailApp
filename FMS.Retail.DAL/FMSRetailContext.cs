@@ -10,4 +10,6 @@ public class FMSRetailContext : DbContext
     }
 
     public DbSet<Product> Products { get; set; }
+    public DbSet<Customer> Customers { get; set; }
+    public DbSet<Sale> Sales { get; set; }
 }

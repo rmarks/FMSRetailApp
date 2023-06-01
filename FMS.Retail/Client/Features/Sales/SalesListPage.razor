@@ -1,0 +1,68 @@
+﻿@page "/sales"
+@inject HttpClient HttpClient
+
+<MudTable Class="my-10" Items="_sales" Loading="_isLoading" Hover="true">
+    <ToolBarContent>
+        <MudText Class="my-5 ml-2" Typo="Typo.h5">Müügid</MudText>
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Filled.Add" OnClick="AddSale" Title="Lisa uus" />
+    </ToolBarContent>
+    <NoRecordsContent>
+        <MudText Typo="Typo.body2">Müügid puuduvad.</MudText>
+    </NoRecordsContent>
+    <ColGroup>
+        <col style="width: 20%" />
+        <col style="width: 20%" />
+        <col style="width: 50%" />
+        <col style="width: 10%" />
+    </ColGroup>
+    <HeaderContent>
+        <MudTh>Number</MudTh>
+        <MudTh>Kuupäev</MudTh>
+        <MudTh>Klient</MudTh>
+        <MudTh></MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd>@context.SaleNo</MudTd>
+        @*<MudTd>@context.SaleDate?.ToShortDateString()</MudTd>*@
+        <MudTd>@context.SaleDate?.ToString("dd.MM.yyyy")</MudTd>
+        <MudTd>@context.CustomerName</MudTd>
+        <MudTd Style="text-align:end">
+            <MudIconButton Class="ml-2" Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="() => EditSale(context.Id)" Title="Muuda" />
+        </MudTd>
+    </RowTemplate>
+</MudTable>
+
+
+@code {
+    private IEnumerable<SalesListItemModel> _sales = Enumerable.Empty<SalesListItemModel>();
+    private bool _isLoading;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    #region event handlers
+    private void AddSale()
+    {
+
+    }
+
+    private void EditSale(int id)
+    {
+
+    }
+    #endregion
+
+    private async Task LoadData()
+    {
+        _isLoading = true;
+
+        var response = await HttpClient.GetFromJsonAsync<IEnumerable<SalesListItemModel>>("/api/sales");
+
+        _sales = response ?? Enumerable.Empty<SalesListItemModel>();
+
+        _isLoading = false;
+    }
+}

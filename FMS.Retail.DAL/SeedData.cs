@@ -44,6 +44,17 @@ public static class SeedData
             new Product { Code = "03098704", Name = "Ripats Hobuseraud CZ", Price = 60 }
         });
 
+        context.Customers.Add(new Customer { Name = "Jaemüügi klient" });
+
+        context.SaveChanges();
+
+        context.Sales.AddRange(new[]
+        {
+            new Sale { SaleNo = "1", SaleDate = new DateTime(2023, 5, 29), CustomerId = 1 },
+            new Sale { SaleNo = "2", SaleDate = new DateTime(2023, 5, 30), CustomerId = 1 },
+            new Sale { SaleNo = "3", SaleDate = new DateTime(2023, 5, 31), CustomerId = 1 }
+        });
+
         context.SaveChanges();
     }
 }
