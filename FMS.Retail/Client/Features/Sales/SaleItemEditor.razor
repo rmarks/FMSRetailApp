@@ -1,0 +1,140 @@
+﻿@inject HttpClient HttpClient
+@inject IDialogService DialogService
+
+<MudPaper Class="px-4 pb-2">
+    <EditForm Model="_currentItem">
+        <MudFocusTrap>
+            <MudGrid Spacing="3">
+                @if (_isItemLoaded == false)
+                {
+                    <MudItem xs="3">
+                        <MudTextField HelperText="Kood" @bind-Value="@_currentItem.ProductCode" @ref="_codeRef" />
+                    </MudItem>
+                    <MudItem xs="1" Class="d-flex justify-center align-center">
+                        <MudFab ButtonType="ButtonType.Submit" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Search" Size="Size.Medium" @onclick="LoadItem" />
+                    </MudItem>
+                }
+                else
+                {
+                    <MudItem xs="3">
+                        <MudTextField HelperText="Kood" Value="@_currentItem.ProductCode" Disabled="true" />
+                    </MudItem>
+                    <MudItem xs="4">
+                        <MudTextField HelperText="Nimi" Value="@_currentItem.ProductName" Disabled="true" />
+                    </MudItem>
+                    <MudItem xs="2">
+                        <MudTextField HelperText="Hind" Value="@_currentItem.ProductPrice" Disabled="true" Format="#" />
+                    </MudItem>
+                    <MudItem xs="1">
+                        <MudTextField HelperText="Kogus" @bind-Value="@_currentItem.Quantity" @ref="_quantityRef" Format="#" />
+                    </MudItem>
+                    <MudItem xs="2" Class="d-flex justify-end align-center">
+                        <MudFab ButtonType="ButtonType.Submit" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Check" Size="Size.Medium" @onclick="SubmitItem" />
+                        <MudFab Class="ml-3" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Clear" Size="Size.Small" @onclick="ResetItem" />
+                    </MudItem>
+                }
+            </MudGrid>
+        </MudFocusTrap>
+    </EditForm>
+</MudPaper>
+
+@code {
+    private SaleItemModel _currentItem = new();
+    private bool _isItemLoaded;
+    private MudTextField<string>? _codeRef;
+    private MudTextField<int>? _quantityRef;
+
+    [Parameter, EditorRequired] public Func<int, SaleItemModel?>? OnItemRequest { get; set; }
+    [Parameter, EditorRequired] public EventCallback<SaleItemModel> OnItemSubmit { get; set; }
+
+    #region event handler
+    private async Task LoadItem()
+    {
+        SaleItemProductModel? itemProduct;
+        try
+        {
+            itemProduct = await HttpClient.GetFromJsonAsync<SaleItemProductModel>($"/api/saleitem/product/{_currentItem.ProductCode}")
+                ?? throw new Exception();
+        }
+        catch (HttpRequestException)
+        {
+            await DialogService.ShowMessageBox("Otsing", "Sellise koodiga toodet ei leitud.", yesText: "OK");
+
+            await Task.Yield();
+            if (_codeRef != null) await _codeRef.SelectAsync();
+            return;
+        }
+
+        var itemFromList = OnItemRequest?.Invoke(itemProduct.ProductId);
+        if (itemFromList is not null)
+        {
+            _currentItem.CopyFrom(itemFromList);
+        }
+        else
+        {
+            _currentItem.ProductId = itemProduct.ProductId;
+            _currentItem.ProductCode = itemProduct.ProductCode;
+            _currentItem.ProductName = itemProduct.ProductName;
+            _currentItem.ProductPrice = itemProduct.ProductPrice;
+        }
+
+        _isItemLoaded = true;
+
+        //await Task.Yield();
+        //if (_quantityRef != null) await _quantityRef.FocusAsync();
+        StateHasChanged();
+        if (_quantityRef != null) await _quantityRef.SelectAsync();
+    }
+
+    private async Task SubmitItem()
+    {
+        if (_currentItem.Quantity <= 0) return;
+
+        await OnItemSubmit.InvokeAsync(_currentItem.GetCopy());
+
+        await ResetItem();
+    }
+
+    private async Task ResetItem()
+    {
+        ResetCurrentItem();
+        _isItemLoaded = false;
+
+        //StateHasChanged();
+        await Task.Yield();
+        if (_codeRef != null) await _codeRef.SelectAsync();
+    }
+    #endregion
+
+    #region public methods
+    public async Task SetItemForEdit(SaleItemModel item)
+    {
+        if (_isItemLoaded)
+        {
+            if (_currentItem.ProductId != item.ProductId)
+            {
+                await DialogService.ShowMessageBox("Teade", "Lõpeta enne pooleliolev sisestus.", yesText: "OK");
+            }
+        }
+        else
+        {
+            _isItemLoaded = true;
+
+            _currentItem.CopyFrom(item);
+
+            //StateHasChanged();
+            //if (_quantityRef != null) await _quantityRef.SelectAsync();
+        }
+    }
+    #endregion
+
+    #region helpers
+    private void ResetCurrentItem()
+    {
+        foreach (var p in _currentItem.GetType().GetProperties().Where(pi => pi.CanWrite))
+        {
+            p.SetValue(_currentItem, default);
+        }
+    }
+    #endregion
+}

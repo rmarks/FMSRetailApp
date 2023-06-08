@@ -1,0 +1,72 @@
+﻿@page "/sales"
+@inject HttpClient HttpClient
+@inject NavigationManager NavManager
+
+<MudTable Class="my-10" Items="_sales" Loading="_isLoading" Hover="true">
+    <ToolBarContent>
+        <MudText Typo="Typo.h5">Müügid</MudText>
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Filled.Add" OnClick="AddSale" Title="Lisa uus" />
+    </ToolBarContent>
+    <NoRecordsContent>
+        <MudText Typo="Typo.body2">Müügid puuduvad.</MudText>
+    </NoRecordsContent>
+    <ColGroup>
+        <col style="width: 20%" />
+        <col style="width: 20%" />
+        <col style="width: 25%" />
+        <col style="width: 25%" />
+        <col style="width: 10%" />
+    </ColGroup>
+    <HeaderContent>
+        <MudTh Style="font-weight: bold">Number</MudTh>
+        <MudTh Style="font-weight: bold">Kuupäev</MudTh>
+        <MudTh Style="font-weight: bold">Kliendi tüüp</MudTh>
+        <MudTh Style="font-weight: bold">Maksetüüp</MudTh>
+        <MudTh></MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd>@context.SaleNo</MudTd>
+        @*<MudTd>@context.SaleDate?.ToShortDateString()</MudTd>*@
+        <MudTd>@context.SaleDate?.ToString("dd.MM.yyyy")</MudTd>
+        <MudTd>@context.CustomerTypeName</MudTd>
+        <MudTd>@context.PaymentTypeName</MudTd>
+        <MudTd Style="text-align:end">
+            <MudIconButton Class="ml-2" Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="() => EditSale(context.Id)" Title="Muuda" />
+        </MudTd>
+    </RowTemplate>
+</MudTable>
+
+
+@code {
+    private IEnumerable<SalesListItemModel> _sales = Enumerable.Empty<SalesListItemModel>();
+    private bool _isLoading;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    #region event handlers
+    private void AddSale()
+    {
+        NavManager.NavigateTo("/sale/add");
+    }
+
+    private void EditSale(int id)
+    {
+        NavManager.NavigateTo($"/sale/{id}");
+    }
+    #endregion
+
+    private async Task LoadData()
+    {
+        _isLoading = true;
+
+        var response = await HttpClient.GetFromJsonAsync<IEnumerable<SalesListItemModel>>("/api/sales");
+
+        _sales = response ?? Enumerable.Empty<SalesListItemModel>();
+
+        _isLoading = false;
+    }
+}

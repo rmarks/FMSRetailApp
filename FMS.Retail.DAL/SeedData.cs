@@ -8,7 +8,7 @@ public static class SeedData
     public static void EnsurePopulated(IServiceProvider serviceProvider)
     {
         var context = serviceProvider.GetRequiredService<FMSRetailContext>();
-        
+
         context.Database.EnsureCreated();
 
         if (context.Products.Any()) return;
@@ -42,6 +42,48 @@ public static class SeedData
             new Product { Code = "03092347", Name = "Ripats CZ lavender", Price = 85 },
             new Product { Code = "03092477", Name = "Ripats CZ", Price = 70 },
             new Product { Code = "03098704", Name = "Ripats Hobuseraud CZ", Price = 60 }
+        });
+
+        //context.Customers.Add(new Customer { Name = "Jaemüügi klient" });
+        context.Customers.AddRange(new[]
+        {
+            new Customer { Name = "Paul Purakas" },
+            new Customer { Name = "Tatjana Tool" },
+            new Customer { Name = "Tanel Kana" },
+            new Customer { Name = "Pamela Naan" }
+        });
+
+        context.SaveChanges();
+
+        context.PaymentTypes.AddRange(new[]
+        {
+            new PaymentType { Name = "Sularaha" },
+            new PaymentType { Name = "Maksekaart" }
+        });
+
+        context.CustomerTypes.AddRange(new[]
+        {
+            new CustomerType { Name = "Jaeklient" },
+            new CustomerType { Name = "Püsiklient", HasCustomer = true }
+        });
+
+        context.Sales.AddRange(new[]
+        {
+            new Sale { SaleNo = "1", SaleDate = new DateTime(2023, 5, 29), CustomerId = null, PaymentTypeId = 1, CustomerTypeId = 1 },
+            new Sale { SaleNo = "2", SaleDate = new DateTime(2023, 5, 30), CustomerId = null, PaymentTypeId = 1, CustomerTypeId = 1 },
+            new Sale { SaleNo = "3", SaleDate = new DateTime(2023, 5, 31), CustomerId = 1, PaymentTypeId = 2, CustomerTypeId = 2 }
+        });
+
+        context.SaleItems.AddRange(new[]
+        {
+            new SaleItem { SaleId = 1, ProductId = 1, Quantity = 1 },
+            new SaleItem { SaleId = 1, ProductId = 4, Quantity = 1 },
+            new SaleItem { SaleId = 1, ProductId = 7, Quantity = 2 },
+
+            new SaleItem { SaleId = 2, ProductId = 10, Quantity = 3 },
+
+            new SaleItem { SaleId = 3, ProductId = 4, Quantity = 2 },
+            new SaleItem { SaleId = 3, ProductId = 8, Quantity = 1 },
         });
 
         context.SaveChanges();

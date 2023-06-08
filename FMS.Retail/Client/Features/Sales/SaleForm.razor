@@ -1,0 +1,170 @@
+﻿@inject HttpClient HttpClient
+@inject IDialogService DialogService
+
+<MudStack Spacing="5">
+    <MudPaper Class="pa-4">
+        <MudForm @ref="_mudFormRef" @bind-IsValid="_isSaleValid" @bind-IsTouched="_isInEditMode">
+            <MudGrid Spacing="4">
+                <MudItem xs="2">
+                    <MudStack Spacing="4">
+                        <MudTextField Label="Arve nr." @bind-Value=_sale.SaleNo ReadOnly="true" />
+                        <MudTextField Label="Kuupäev" @bind-Value=_sale.SaleDate Format="dd.MM.yyyy" ReadOnly="true" />
+                    </MudStack>
+                </MudItem>
+                <MudItem xs="4">
+                    <MudStack Spacing="4">
+                        @if (_customerTypes is null)
+                        {
+                            <MudSelect T="int" Label="Kliendi tüüp">
+                                <MudSelectItem T="int">(Laen andmeid...)</MudSelectItem>
+                            </MudSelect>
+                        }
+                        else
+                        {
+                            <MudSelect Label="Kliendi tüüp" @bind-Value="_sale.CustomerTypeId" @bind-Value:after="HandleCustomer" Format="#" AnchorOrigin="Origin.BottomCenter"
+                                       Validation="@(new Func<int, string?>(ValidateKey))">
+                                @foreach (var ct in _customerTypes)
+                                {
+                                    <MudSelectItem Value="ct.Id">@ct.Name</MudSelectItem>
+                                }
+                            </MudSelect>
+                        }
+
+                        <MudAutocomplete T="CustomerModel" Label="Kliendi nimi" @bind-Value="_sale.Customer" SearchFunc="SearchCustomer" ToStringFunc="(c) => c.Name"
+                                         ResetValueOnEmptyText=" true" @onfocusout="@(() => {})" Disabled="CustomerDisabled"
+                                         Validation="@(new Func<CustomerModel, string?>(ValidateCustomer))" />
+                    </MudStack>
+                </MudItem>
+                <MudItem xs="3">
+                    <MudStack Spacing="4">
+                        @if (_paymentTypes is not null)
+                        {
+                            <MudSelect Label="Makse tüüp" @bind-Value="@_sale.PaymentTypeId" Format="#" AnchorOrigin="Origin.BottomCenter"
+                                       Validation="@(new Func<int, string?>(ValidateKey))">
+                                @foreach (var pt in _paymentTypes)
+                                {
+                                    <MudSelectItem Value="@pt.Id">@pt.Name</MudSelectItem>
+                                }
+                            </MudSelect>
+                        }
+                    </MudStack>
+                </MudItem>
+            </MudGrid>
+        </MudForm>
+    </MudPaper>
+
+    <SaleItemEditor OnItemRequest="GetItemFromList" OnItemSubmit="AddItemToList" @ref="_saleItemEditorRef" />
+
+    <SaleItemsList SaleItems="_sale.Items" OnItemSelected="SetItemForEdit" OnListChanged="@(() => _isInEditMode = true)" @ref="_saleItemsListRef" />
+
+    <div class="d-flex justify-end">
+        <MudButton ButtonType="ButtonType.Button" Variant="Variant.Filled" Color="Color.Primary" @onclick="SubmitSale" Disabled="SaveDisabled">Salvesta</MudButton>
+    </div>
+</MudStack>
+
+
+@code {
+    private SaleModel _sale = new();
+    private SaleItemsList _saleItemsListRef = default!;
+    private SaleItemEditor _saleItemEditorRef = default!;
+    private IEnumerable<PaymentTypeModel>? _paymentTypes;
+    private IEnumerable<CustomerTypeModel>? _customerTypes;
+    private MudForm _mudFormRef = default!;
+    private bool _isSaleValid;
+    private bool _isInEditMode;
+
+    [Parameter, EditorRequired] public SaleModel Sale { get; set; } = default!;
+    [Parameter, EditorRequired] public EventCallback<SaleModel> OnSubmit { get; set; }
+    [Parameter] public EventCallback OnChange { get; set; }
+
+    private bool CustomerDisabled => (_customerTypes?.FirstOrDefault(ct => ct.Id == _sale.CustomerTypeId)?.HasCustomer ?? false) ? false : true;
+    private bool SaveDisabled => !_isInEditMode;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _sale.CopyFrom(Sale);
+
+        if (_sale.Id == 0)
+        {
+            _isInEditMode = true;
+        }
+
+        await LoadDropdowns();
+    }
+
+    #region event handlers
+    private SaleItemModel? GetItemFromList(int productId)
+    {
+        return _saleItemsListRef.GetItemFromList(productId);
+    }
+
+    private void AddItemToList(SaleItemModel item)
+    {
+        item.SaleId = _sale.Id;
+        _saleItemsListRef.AddItemToList(item);
+    }
+
+    private async Task SetItemForEdit(SaleItemModel item)
+    {
+        await _saleItemEditorRef.SetItemForEdit(item);
+    }
+
+    private async Task<IEnumerable<CustomerModel>> SearchCustomer(string customerName)
+    {
+        return await HttpClient.GetFromJsonAsync<IEnumerable<CustomerModel>>($"/api/sale/customers/search/{customerName}")
+            ?? new CustomerModel[0];
+    }
+
+    private void HandleCustomer()
+    {
+        if (CustomerDisabled)
+        {
+            _sale.Customer = null;
+        }
+    }
+
+    private async Task SubmitSale()
+    {
+        await _mudFormRef.Validate();
+
+        if (_isSaleValid)
+        {
+            _isInEditMode = false;
+            await OnSubmit.InvokeAsync(_sale);
+        }
+    }
+    #endregion
+
+    #region public methods
+    public async Task<bool> CheckIfFormCanBeClosed()
+    {
+        if (_isInEditMode)
+        {
+            bool? result = await DialogService.ShowMessageBox("Sulgemine", "Kas sulgeme müügi ilma salvestamata?", yesText: "Jah", cancelText: "Ei");
+
+            return result is not null ? true : false;
+        }
+
+        return true;
+    }
+    #endregion
+
+    #region helpers
+    private async Task LoadDropdowns()
+    {
+        var response = await HttpClient.GetFromJsonAsync<GetSaleDropdownsResponse>("/api/sale/dropdowns");
+        _paymentTypes = response?.PaymentTypes;
+        _customerTypes = response?.CustomerTypes;
+    }
+
+    private string? ValidateCustomer(CustomerModel customer)
+    {
+        return !CustomerDisabled && string.IsNullOrWhiteSpace(customer?.Name) ? "Sisesta kliendi nimi" : null;
+    }
+
+    private string? ValidateKey(int key)
+    {
+        return key == 0 ? "Sisesta tüüp" : null;
+    }
+    #endregion
+}
