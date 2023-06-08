@@ -12,4 +12,7 @@ public class FMSRetailContext : DbContext
     public DbSet<Product> Products { get; set; }
     public DbSet<Customer> Customers { get; set; }
     public DbSet<Sale> Sales { get; set; }
+    public DbSet<SaleItem> SaleItems { get; set; }
+    public DbSet<PaymentType> PaymentTypes { get; set; }
+    public DbSet<CustomerType> CustomerTypes { get; set; }
 }

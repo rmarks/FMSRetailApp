@@ -20,12 +20,14 @@ public class GetSalesEndpoint : EndpointBaseAsync.WithoutRequest.WithActionResul
     {
         var sales = await _context.Sales
             .AsNoTracking()
+            .OrderByDescending(s => s.SaleNo)
             .Select(s => new SalesListItemModel
             {
                 Id = s.Id,
                 SaleNo = s.SaleNo,
                 SaleDate = s.SaleDate,
-                CustomerName = s.Customer.Name
+                CustomerTypeName = s.CustomerType.Name,
+                PaymentTypeName = s.PaymentType.Name
             })
             .ToListAsync();
 

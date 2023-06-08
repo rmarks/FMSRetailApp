@@ -1,0 +1,113 @@
+﻿@inject IDialogService DialogService
+
+<div>
+    <MudTable Items="SaleItems" @bind-SelectedItem="_selectedItem" RowClassFunc="SelectedRowClassFunc" @ondblclick="() => OnItemSelected.InvokeAsync(_selectedItem)">
+        <HeaderContent>
+            <MudTh Style="font-weight: bold">Toote kood</MudTh>
+            <MudTh Style="font-weight: bold">Toote nimi</MudTh>
+            <MudTh Style="font-weight: bold; text-align:right">Toote hind</MudTh>
+            <MudTh Style="font-weight: bold; text-align:right">Kogus</MudTh>
+            <MudTh></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>@context?.ProductCode</MudTd>
+            <MudTd>@context?.ProductName</MudTd>
+            <MudTd Style="text-align:right">@context?.ProductPrice.ToString("0.00")</MudTd>
+            <MudTd Style="text-align:right">@context?.Quantity</MudTd>
+            <MudTh Class="d-flex justify-end">
+                <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Delete" OnClick="() => RemoveItemFromList(context!)" Title="Kustuta" />
+            </MudTh>
+        </RowTemplate>
+        <FooterContent>
+            <MudTd colspan="5">
+                <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="16">
+                    <MudText Typo="Typo.body2" Style="font-weight: bold">Kogus kokku: @_totalQuantity</MudText>
+                    <MudText Typo="Typo.body2" Style="font-weight: bold">Summa: @_total.ToString("0.00")</MudText>
+                    <MudText Typo="Typo.body2" Style="font-weight: bold">Km: @_vat.ToString("0.00")</MudText>
+                    <MudText Typo="Typo.body2" Style="font-weight: bold">Summa km.-ga: @_totalWithVat.ToString("0.00")</MudText>
+                </MudStack>
+            </MudTd>
+        </FooterContent>
+    </MudTable>
+</div>
+
+@code {
+    private SaleItemModel? _selectedItem;
+    private decimal _total;
+    private decimal _vat;
+    private decimal _totalWithVat;
+    private int _totalQuantity;
+
+    [Parameter, EditorRequired] public List<SaleItemModel> SaleItems { get; set; } = default!;
+    [Parameter] public EventCallback<SaleItemModel> OnItemSelected { get; set; } = default!;
+    [Parameter] public EventCallback OnListChanged { get; set; }
+
+    protected override void OnInitialized()
+    {
+        CalculateTotal();
+    }
+
+    #region event handlers
+    private string SelectedRowClassFunc(SaleItemModel? item, int rowNumber)
+    {
+        if (_selectedItem?.ProductId == item?.ProductId) return "selected";
+
+        return string.Empty;
+    }
+
+    private async Task RemoveItemFromList(SaleItemModel item)
+    {
+        bool? result = await DialogService.ShowMessageBox("Kustutamine", "Kas kustutame toote?", yesText: "Kustuta", cancelText: "Katkesta");
+
+        if (result is not null)
+        {
+            SaleItems.Remove(item);
+        }
+
+        CalculateTotal();
+
+        await OnListChanged.InvokeAsync();
+    }
+    #endregion
+
+    #region public methods
+    public SaleItemModel? GetItemFromList(int productId)
+    {
+        var itemFromList = SaleItems.Find(i => i.ProductId == productId);
+        _selectedItem = itemFromList;
+        StateHasChanged();
+
+        return itemFromList;
+    }
+
+    public void AddItemToList(SaleItemModel item)
+    {
+        var itemFromList = SaleItems.Find(i => i.ProductId == item.ProductId);
+        if (itemFromList is not null)
+        {
+            int i = SaleItems.IndexOf(itemFromList);
+            SaleItems[i] = item;
+        }
+        else
+        {
+            SaleItems.Add(item);
+        }
+
+        _selectedItem = item;
+
+        CalculateTotal();
+
+        OnListChanged.InvokeAsync();
+    }
+    #endregion
+
+    #region helpers
+    private void CalculateTotal()
+    {
+        _total = SaleItems.Sum(i => i.Quantity * i.ProductPrice);
+        _vat = _total * 0.2m;
+        _totalWithVat = _total + _vat;
+        _totalQuantity = SaleItems.Sum(i => i.Quantity);
+    }
+    #endregion
+}

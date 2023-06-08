@@ -1,0 +1,81 @@
+﻿@page "/sale/{Id:int}"
+@page "/sale/add"
+@inject HttpClient HttpClient
+@inject NavigationManager NavManager
+
+<MudPaper Class="mb-5 mt-10">
+    <MudToolBar>
+        <MudText Typo="Typo.h6">Müük</MudText>
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Outlined.Close" @onclick="CloseSale" Title="Välju" />
+    </MudToolBar>
+</MudPaper>
+
+@if (!_isLoading)
+{
+    <SaleForm Sale="_sale" OnSubmit="SaveSale" @ref="_saleFormRef" />
+}
+
+
+@code {
+    private SaleModel _sale = new SaleModel { CustomerTypeId = 1, PaymentTypeId = 1 };
+    private bool _isLoading;
+    private SaleForm _saleFormRef = default!;
+
+    [Parameter, EditorRequired] public int Id { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Id != 0)
+        {
+            await LoadSale();
+        }
+    }
+
+    private async Task CloseSale()
+    {
+        if (await _saleFormRef.CheckIfFormCanBeClosed())
+        {
+            NavManager.NavigateTo("/sales");
+        }
+    }
+
+    private async Task SaveSale(SaleModel sale)
+    {
+        HttpResponseMessage httpResponse = default!;
+
+        if (sale.Id == 0)
+        {
+            httpResponse = await HttpClient.PostAsJsonAsync<SaleModel>("/api/sale", sale);
+            if (httpResponse.IsSuccessStatusCode)
+            {
+                int id = await httpResponse.Content.ReadFromJsonAsync<int>();
+                NavManager.NavigateTo($"/sale/{id}");
+            }
+            else
+            {
+                throw new Exception("Failed to add the Sale");
+            }
+        }
+        else
+        {
+            httpResponse = await HttpClient.PutAsJsonAsync<SaleModel>("/api/sale", sale);
+            if (httpResponse.IsSuccessStatusCode == false)
+            {
+                throw new Exception("Failed to update the Sale");
+            }
+        }
+    }
+
+    #region helpers
+    private async Task LoadSale()
+    {
+        _isLoading = true;
+
+        var response = await HttpClient.GetFromJsonAsync<SaleModel>($"/api/sale/{Id}");
+        _sale = response ?? throw new Exception("Sale not found");
+
+        _isLoading = false;
+    }
+    #endregion
+}
